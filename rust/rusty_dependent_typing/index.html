@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Rusty Dependent Types</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Fira Code', monospace; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# Rusty Dependent Types
+## Ergonomic types for provable safety and security
+
+### Sabree Blackmon
+Senior Security Engineer @Docker
+
+@HeavyPackets
+
+---
+class: center, middle
+
+# Housekeeping
+
+---
+class: center, middle
+
+## Rust is not a "dependently typed" language
+This isn't critical for us, but Rust makes a poor theorem prover.
+
+---
+class: center, middle
+
+## Rust is not a "dependently typed" language
+This means that most value proofs must be evaluated at runtime. The compiler isn't capable of checking many axioms statically
+
+???
+
+But, even in dependently typed languages, certain value proofs can only evaluated at runtime and this is idiomatic
+
+---
+class: center, middle
+
+## Definitions are hard
+Most formal definitions in type theory land demand serious prerequisite knowlege of existing type concepts and nomenclature
+
+---
+class: center, middle
+
+## Definitions are hard
+This talk attempts to stick to nomenclature familiar to Rust developers while keeping true to formal definitions.
+
+Any deviations will called out.
+
+???
+
+If you approach Rust from languages like C/C++, it's likely most of this material will be new
+
+---
+class: center, middle
+
+## There are many dependent type theories
+The talk takes most of its definitions from Martin-Löf dependent type theory
+
+???
+
+If you know what these means, much of this talk will not be new to you
+
+---
+class: center, middle
+
+## Code is Math
+Code is the common way developers communicate. Let's use it as much as possible to show our concepts.
+---
+class: center, middle
+
+## Ask Questions!
+_Please_, please interrupt if there are things you do not grok. You are _never_ the only one who doesn't
+
+---
+class: center, middle
+
+#So, let's get started
+
+---
+class: center, middle
+
+# Why are we here?
+
+???
+
+So let's ask: Why are we here? You probably fall into one of three camps.
+
+---
+class: center, middle
+
+# What's a Rust?
+_Come back next month!_
+
+_(mostly joking)_
+
+???
+If this last camp is you, there's good concepts here but the latter half of the talk will be very Rusty. Feel free to ask questions, but I _may_ do some hand waving over things to get through it
+
+---
+class: center, middle
+
+# Types systems are cool!
+_Correct_
+
+---
+class: center, middle
+
+# Security is cool!
+_Also, correct_
+
+---
+class: center, middle
+![What if I told you, a strong type system is security](security.jpg)
+
+Let's go into some examples to demonstrate this!
+
+---
+class: center, middle
+Let's pretend we have a Ruby on Rails app. This app is some fictional "bidding" ecommerce platform.
+
+---
+There's a simple HTML form on an page that takes a textbox bid amount for some item who's ID is stored in a hidden field.
+
+Within the controller we have:
+
+```ruby
+item = @params['form']['item']
+amount = @params['form']['amount'].to_f()
+
+bid = Bid::new(item, amount)
+Bidder::submit_bid bid
+if bid.highest?() do
+        println!("Highest bid!")
+end
+```
+Even if you don't know Ruby, try to spot possible vulnaribilties (there are many).
+
+---
+
+```ruby
+item = @params['form']['item']
+amount = @params['form']['amount'].to_f()
+
+bid = Bid::new(item, amount)
+Bidder::submit_bid bid
+if bid.highest?() do
+        println!("Highest bid!")
+end
+```
+What happens if the form amount is negative? (Easy)
+--
+
+
+- submit_bid gets a negative float -- does is know how to handle this?
+--
+
+
+What happens if the form field amount contains a word? (Harder)
+--
+
+
+- String::to_f() will try its best to coerce it to a valid float. If that doesn't work, it returns 0.0
+--
+
+
+What happens if the bid amount is $2000000000.00? (Hardest)
+--
+
+
+- Sorry user, but that type checks!
+
+---
+class: center, middle
+# Let's try this in Rust -- that should help, right?
+
+---
+```rust
+#[derive(Deserialize)]
+struct Bid {
+   item: u32,
+   amount: f64,
+}
+
+fn bid_handler(bid: Form<Bid>) -> Result<String> {
+    if let Ok(BidStatus::Highest) = Bidder::submit_bid(&bid) {
+        Ok("Highest bid!")
+    } else {
+        Ok("")
+    }
+}
+```
+Huzzah! Types! This looks better! But is it?
+
+???
+Note: This uses the Rocket web frameworks
+
+---
+```rust
+#[derive(Deserialize)]
+struct Bid {
+   item: u32,
+   amount: f64,
+}
+
+fn bid_handler(bid: Form<Bid>) -> Result<String> {
+    if let Ok(BidStatus::Highest) = Bidder::submit_bid(&bid) {
+        Ok("Highest bid!")
+    } else {
+        Ok("")
+    }
+}
+```
+What happens if the form amount is negative? (Easy)
+--
+
+
+- submit_bid still gets a negative float -- unsigned floats don't exist in Rust
+--
+
+
+What happens if the form field amount contains a word? (Harder)
+--
+
+
+- Serde will try to coerce it to a float. If unsuccessful, a Bid cannot be created and the handler is never called 👍
+
+---
+```rust
+#[derive(Deserialize)]
+struct Bid {
+   item: u32,
+   amount: f64,
+}
+
+fn bid_handler(bid: Form<Bid>) -> Result<String> {
+    if let Ok(BidStatus::Highest) = Bidder::submit_bid(&bid) {
+        Ok("Highest bid!")
+    } else {
+        Ok("")
+    }
+}
+```
+What happens if the bid amount is $2000000000.00? (Hardest)
+--
+
+
+- Sorry user, but that still type checks!
+---
+class: center, middle
+
+# Even with a stronger type system this has only marginally improved!
+Valid Bids cannot be enforced through types alone -- these contraints represent a kind of _type invariant_.
+---
+class: center, middle
+
+# What are type invariants?
+--
+
+These are a kind of constraint between members of an object (product type) that must remain correct during it's lifetime.
+
+---
+class: center, middle
+
+## No operations can result in an object state such that the invariants are no longer satisfied!
+_Caveat: Internal methods can temporarily break the invariant_
+
+---
+class: center, middle
+
+### You might be thinking: "But wait! We have immutability! And we avoid OOP hell, so our types are simple!"
+--
+
+True! And we'll see how this helps us later.
+
+---
+class: center, middle
+
+# Let's look at an example.
+
+---
+class: middle
+
+## Let's say our Bid is only valid if it's amount is:
+- Over 1 dollar
+- Less than 1000000 dollars
+
+---
+class: center, middle
+
+### In our case, enforcing our constaints is easy. However, this can get complicated.
+
+---
+
+# Why is this important to application security?
+--
+
+- Improper value validation is a large cause of bugs and vulnerabilities.
+
+--
+
+- It's often not clear where the responsibility lies to enforce these constaints.
+
+--
+
+- Keeping validation synchronized is hard and there's often no source of truth.
+
+--
+
+- Fuzzing attempts to catch many of these bugs, but it can be slow and non-deterministic.
+
+---
+class: center, middle
+
+# Let's try to improve this!
+---
+
+```rust
+#[derive(Deserialize)]
+struct Bid {
+   item: u32,
+   amount: f64,
+}
+
+fn bid_handler(bid: Form<Bid>) -> Result<String> {
+    if bid.amount < 1.0 || bid.amount > 1000000 {
+        panic!("Invalid bid");
+    }
+
+    if let Ok(BidStatus::Highest) = Bidder::submit_bid(&bid) {
+        Ok("Highest bid!")
+    } else {
+        Ok("")
+    }
+}
+```
+Now, we validate the Bid before it gets sent to submit_bid. But there's issues with this:
+--
+
+- This logic has to be duplicated everywhere a Bid is created
+--
+
+- The value _predicate_ (amount < 1.00 || amount > 1000000) isn't a described part of the type itself. Therefore, an instance of the type carries no _proof_
+
+???
+
+That may be a bit confusing. But we'll discuss _provability_ in just a bit
+
+---
+class: center, middle
+
+# Let's iterate again
+
+---
+```rust
+#[derive(Deserialize)]
+struct Bid {
+   item: u32,
+   amount: f64,
+}
+
+impl Bid {
+    fn is_valid(&self) -> bool {
+        if self.amount >= 1.0 && self.amount < 1000000 { true }
+        else { false }
+    }
+}
+
+fn bid_handler(bid: Form<Bid>) -> Result<String> {
+    if bid.is_valid() == false {
+            panic!("Invalid bid");
+    }
+
+    if let Ok(BidStatus::Highest) = Bidder::submit_bid(&bid) {
+        Ok("Highest bid!")
+    } else {
+        Ok("")
+    }
+}
+```
+We naturally move the that predicate into a method.
+---
+class: middle
+
+## But there are issues with this too:
+- We can still create an invalid instance of Bid!
+--
+
+
+- There is nothing forcing us to check if the bid is valid before using it.
+
+---
+class: center, middle
+
+## What if we can prevent the creation of a Bid unless it's constraints are satisfied? 🤔
+We can! (sorta)
+
+---
+class: center, middle
+
+#Smart constructors
+Let's iterate, _again_
+
+---
+```rust
+#[derive(Deserialize)]
+struct Bid {
+   item: u32,
+   amount: f64,
+}
+
+impl Bid {
+    fn new(item: u32, amount: f64) -> Option<Bid> {
+        if amount >= 1.0 && amount < 1000000 {
+            Some(Bid {item, amount})
+        } else {
+            None
+        }
+    }
+}
+
+fn bid_handler(bid: Form<Bid>) -> Result<String> {
+    if let Ok(BidStatus::Highest) = Bidder::submit_bid(&bid) {
+        Ok("Highest bid!")
+    } else {
+        Ok("")
+    }
+}
+```
+Whew! We've captured our predicate in the constructor!
+---
+class: center, middle
+
+# Why does this work?
+
+---
+class: middle
+
+- Constructors aren't special in Rust but...
+
+--
+
+- We can prevent construction of a type outside of it's module if one or more members are private.
+
+
+--
+- We can use PhantomData to create an unused private field if needed.
+
+---
+class: center, middle
+
+# Why doesn't this work? 😡
+
+---
+class: middle
+
+- The type only goes through our predicate once. If it any of the fields referenced by the predicate are mutable, then it cannot be used as _proof_
+
+--
+
+- Lots of new wiring has to be written to get Serde to deserialize into a _maybe type_.
+
+---
+class: center, middle
+
+# What's a _maybe type_?
+
+Another name for an Option. A value may exist (Some) or may not exist (None).
+
+---
+class: center, middle
+
+# What's a _maybe type_?
+
+Here, we can say our a Bid _maybe_ exists based on the parameters used in the constructor because it returns an Option.
+
+--
+
+
+Our predicate is _decidable_ -- it can only evaluate to true or false. So...
+
+
+--
+
+If our predicate (amount >= 1.0 && amount < 1000000) is true, then we can say we've _proved_ that a valid Bid exists
+
+---
+class: center, middle
+
+# Why does proof matter to security and safety?
+---
+class: center, middle
+
+## Imagine if we could say "if this instance of the type exists, it's proof to it's validity or correctness?"
+or
+
+---
+class: center, middle
+
+## Imagine if we could say "if this instance of the type exists, it's proposition has been proven"
+### This is considered a form of _existential quantification_ and is useful for building proofs about our programs using our types
+
+???
+This last bit is an important trait of the "propositions as types" of Martin-Löf dependent type theory. This will be important later
+
+---
+class: middle
+
+## This would: 
+- Dramatically simplify our code paths by bringing responsibilities of validation to the type itself
+
+- Bring us closer to formal validation of our software
+
+- Allow us to safely perform complex transformations on types*
+
+* Only if our types are immutable! 
+
+---
+class: middle
+
+## This we can implement more securely this way: 
+- Access control and permissions
+
+- Parsing routines
+
+- Protocols
+
+- Everything
+
+---
+class: center, middle
+
+# And that, folks, are dependent types!
+_cue curtains_
+
+---
+class: center, middle
+
+## Well almost. Let's go into some detail
+But before we do, any questions?
+
+---
+class: center, middle
+
+# Dependent Types
+
+---
+class: middle
+
+## Definition: "a dependent type is a type whose definition depends on a value."
+
+???
+
+So lets define what a dependent type is. Makes sense?
+
+---
+class: center, middle
+
+## Makes sense? 😬
+
+---
+
+## Let's give some examples:
+--
+
+- The type Car is dependent on the amount of horsepower the Car has
+
+--
+
+- The type Car is dependent on whether is has a gasoline engine, electric or both
+
+--
+
+- The type Car is dependent on how many doors is has
+
+--
+
+- The _existance_ of Car is dependent on the existance of 4 wheels
+
+--
+
+
+### Some of these values are scalar, but some of them represent different variants. A type can be dependent on any other kind of type
+--
+
+Types like "Supercar" or "compact car" or "Hybrid" are all _dependently typed variations_ represented by different values of members of the type Car.
+
+Moreover, a Car cannot exist without > 0 engines and exactly 4 wheels
+---
+class: center, middle
+
+# Isn't this what traits are trying to solve? 🤔 
+--
+
+Well, how would represent this with traits?
+---
+```rust
+trait CarT {
+    fn engines(&self) -> &Vec<Engine>;
+    fn wheels(&self) -> &HashMap<Position, Wheel>;
+    fn hp(&self) -> u32;
+}
+struct Car {
+    engines: Vec<Engine>,
+    wheels: HashMap<Position, Wheel>,
+    HP: u32, 
+}
+impl CarT for Car { .. }
+
+trait Compact : CarT {}
+trait Hybrid : CarT {}
+trait Supercar : CarT {}
+```
+--
+Immediately there's problems:
+--
+
+- We cannot constrain the car traits to only type Car (yet). So we must create a trait CarT that is implemented by Car
+
+--
+
+- But there's nothing keeping us from implementing CarT for a Motorcycle type! It also has motors, engines, and wheels!
+
+---
+```rust
+trait CarT {
+    fn engines(&self) -> &Vec<Engine>;
+    fn wheels(&self) -> &HashMap<Position, Wheel>;
+    fn hp(&self) -> u32;
+}
+struct Car {
+    engines: Vec<Engine>,
+    wheels: HashMap<Position, Wheel>,
+    HP: u32, 
+}
+impl CarT for Car { .. }
+
+trait Compact : CarT {}
+trait Hybrid : CarT {}
+trait Supercar : CarT {}
+```
+--
+
+- There's nothing keeping a type from implementing Compact *and* Supercar -- does this make sense? If it doesn't, our type system can't help us
+
+--
+
+- There's nothing enforcing our 4 wheel predicate for the existence of a Car
+
+--
+
+
+Obviously, we cannot use these types as proof of anything
+---
+class: center, middle
+
+# Let's iterate
+---
+```rust
+struct Car {
+    engines: Vec<Engine>,
+    wheels: HashMap<Position, Wheel>,
+    HP: u32, 
+}
+
+impl Car {
+    fn new(engines: Vec<Engine>, wheels: HashMap<Position, Wheel>, HP: u32) -> Option<Car> {
+        if wheels != 4 { None }
+        else { Some(Car { engines, wheels, HP}) }
+    }
+}
+
+struct Hybrid(Car);
+
+impl Hybrid {
+    fn new(car: Car) -> Option<Hybrid> {
+        if /** car.engines contains both an electric and gasoline  */ {
+            Some(Hybrid(Car))
+        } else { None }
+    }
+}
+```
+We're getting there!
+
+???
+Notice: What heppens if Car does not meet our predicate? It's simply consumed. There's no way to return it back to the calling funcion. We *could* store a reference instead, but this has a different meaning
+---
+class: middle
+
+### We can now:
+-  Prove that all instances of Cars have 4 wheels
+
+--
+
+- Lift an a proven instance of Car _into_ a Hybrid if we have proof it has both electric and gas engine
+
+--
+
+- Provide proof that an instance of Hybrid is both a Hybrid and Car
+
+By making our types composible, we can also compose propositions!
+
+--
+
+---
+class: center, middle
+
+##  This is most of the way there. Can we make this more ergonomic?
+--
+
+Maybe. But we need unstable Rust.
+
+---
+```rust
+struct Car {
+    engines: Vec<Engine>,
+    wheels: HashMap<Position, Wheel>,
+    HP: u32, 
+}
+
+impl Car {
+    fn new(engines: Vec<Engine>, wheels: HashMap<Position, Wheel>, HP: u32) -> Option<Car> {
+        if wheels != 4 { None }
+        else { Some(Car { engines, wheels, HP}) }
+    }
+}
+
+struct Hybrid(Car);
+
+impl std::conversion::TryFrom<Car> for Hybrid {
+    type Error = Car;
+
+    fn try_from(car: Car) -> Result<Hybrid, Self::Error> {
+        if /** car.engines contains both an electric and gasoline  */ {
+            Ok(Hybrid(Car))
+        } else { Err(Car) }
+    }
+}
+```
+???
+Notice, try_from returns a Result type. If it doesn't satisfy the predicate, it can be returned to the caller.
+---
+This allows us to do things like:
+
+```rust
+let car = get_car_from_lot();
+
+match Hybrid::try_from(car) {
+    Ok(hybrid)  => ...
+    Err(car) => ...
+}
+```
+
+---
+class: middle
+
+## We've looked at two use cases of dependent typing:
+--
+
+- Existentially predicated types (or propositional types)
+    - This type only exists if...
+
+--
+
+- Predicated type variants
+    - This kind of type only exists if...
+
+--
+
+But! These are only some basic use-cases
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
+
+<!--
+Dependent Type
+
+
+---
+class: center, middle
+
+# Next: Deep Dive into Dependent Types
+
+Lets begin at the Singleton 
+Definition
+Lets take a look at a trait that captures this definition
+Where P represents our projection into type
+And Decided is the result of P
+Implement a simple Singleton
+
+Now, lets look a existential type Singleton
+Where p represents our existential predicate
+
+Quick look at Sigma types
+Quick look at newtypes
+
+Part III How do we use these
+impl Specialization
+Monadic expressions
+- Rust Result type isn't a true Monad, but it gets us close
+Almost GADTS (DADTS)
+- Enum variants
+- Trait variants
+-->
