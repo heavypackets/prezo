@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+<opml version="2.0">
+  <head>
+    <ownerEmail>
+      sabree@heavypackets.sh
+    </ownerEmail>
+  </head>
+  <body>
+    <outline text="Docker In Practice">
+      <outline text="Talk 1: Binaries and Code">
+        <outline text="Introduction">
+          <outline text="YMMV">
+            <outline text="Lots of caveats; pragmatism is key" />
+            <outline text="Best-practices are always negotiable (&quot;best&quot; is constantly changing&quot;)" />
+            <outline text="No one really knows what they are doing, yet" />
+            <outline text="Everyone has an opinion, but Docker is rather loosely-opinionated and on purpose" />
+          </outline>
+          <outline text="What are application artifacts?">
+            <outline text="&quot;An artifact is one of many kinds of tangible by-products produced during the development of software&quot; -- Wikipedia" />
+            <outline text="Binaries">
+              <outline text="Some applications are entire comprised of compiled binaries" />
+              <outline text="Examples">
+                <outline text="Application executables and dynamically linked libraries">
+                  <outline text="C/C++" />
+                  <outline text="Go" />
+                  <outline text=".NET* " />
+                </outline>
+                <outline text="Bytecode from JIT languages">
+                  <outline text="Python .pyc" />
+                </outline>
+              </outline>
+              <outline text="Some binaries and libraries are run-time dependencies but are provided by the OS or other 3rd party packages">
+                <outline text="These are not artifacts themselves, as they are not produced by your development pipeline" />
+                <outline text="However, specific dependency versions &lt;b&gt;can &lt;/b&gt;be an important part of your overall runtime configuration and must be account for">
+                  <outline text="Example, requiring a specific version of Java, .NET, or libstdc++ to be present" />
+                </outline>
+              </outline>
+            </outline>
+            <outline text="Code">
+              <outline text="Shell scripts" />
+              <outline text="Dynamic/Interpreted apps">
+                <outline text="Some applications are made entirely using dynamic languages" />
+                <outline text="Examples">
+                  <outline text="Ruby Rails" />
+                  <outline text="Python Django" />
+                  <outline text="Elixir" />
+                </outline>
+                <outline text="Unlike binary only apps, source code &lt;i&gt;generally &lt;/i&gt;must be included in the resulting containers in order for the app to run (see bytecode)" />
+              </outline>
+              <outline text="Test code">
+                <outline text="Unit tests" />
+                <outline text="Acceptance Tests">
+                  <outline text="RSpec" />
+                  <outline text="Cucumber" />
+                </outline>
+              </outline>
+            </outline>
+            <outline text="Static files">
+              <outline text="These files aren't code per se*, but rather files that:">
+                <outline text="The application itself requires to be present in order to run correctly" />
+                <outline text="Direct an applications behavior by changing its configuration" />
+                <outline text="Can help users understand how the application behaves" />
+              </outline>
+              <outline text="Examples">
+                <outline text="Images" />
+                <outline text="Text files" />
+                <outline text="Configuration files">
+                  <outline text="JSON" />
+                  <outline text="XML" />
+                  <outline text="YAML" />
+                </outline>
+                <outline text="Embedded DB">
+                  <outline text="SQLite" />
+                </outline>
+                <outline text="Documentation">
+                  <outline text="Doxygen" />
+                  <outline text="Man pages" />
+                  <outline text="Swagger" />
+                </outline>
+              </outline>
+            </outline>
+            <outline text="Hybrids/Monoliths">
+              <outline text="Can contain code, binaries, and static files in one container" />
+              <outline text="JARs/WARs/EARs" />
+              <outline text="Linux packages">
+                <outline text="RPM" />
+                <outline text="DEB" />
+              </outline>
+              <outline text="Windows packages">
+                <outline text="Nullsoft" />
+                <outline text="Intellishield" />
+              </outline>
+            </outline>
+          </outline>
+          <outline text="Why is this relevant to Docker?">
+            <outline text="Containers &lt;i&gt;generally &lt;/i&gt;must contain all runtime requirements within a single container">
+              <outline text="It is a &lt;i&gt;good&lt;/i&gt; goal to be able to simply `docker run my-container` and its have its default state without external files or configuration be sane and functional" />
+              <outline text="This a tenant of &lt;b&gt;12-factor &lt;/b&gt;https://12factor.net/d">
+                <outline text="&lt;i&gt;A twelve-factor app never relies on implicit existence of system-wide packages. &lt;/i&gt;" />
+              </outline>
+            </outline>
+            <outline text="External mounting of runtime dependencies (files) is often seen as a bad practice">
+              <outline text="That requires a specific runtime environment configuration to exist before you can run the container" />
+              <outline text="Unless your runtime environment is also versioned or under configuration management, behavior of your application is less guaranteed to be consistent across hosts">
+                <outline text="Not a big deal with single host Docker deployments, but maturation to the use of multi-host orchestration quickly becomes a nightmare" />
+              </outline>
+            </outline>
+            <outline text="However, it is a common practice to &lt;i&gt;override &lt;/i&gt;default configuration within a containerized apps by mounting external files over existing ones in &lt;b&gt;test environments&lt;/b&gt;">
+              <outline text="Example: An NGINX container has a default nginx.conf but you can mount a custom one to override the default, rather than derive an entirely new container">
+                <outline text="docker run nginx/nginx -v ./nginx.conf:/etc/nginx/nginx.conf:ro" />
+              </outline>
+            </outline>
+            <outline text="In production environments, it's a good idea to derive new containers with all required file artifacts compiled in as to avoid a &lt;b&gt;hard&lt;/b&gt; &lt;b&gt;dependency&lt;/b&gt; with your runtime environment" _note="```dockerfile&#10;FROM nginx:latest&#10;&#10;COPY ./nginx.conf /etc/nginx/nginx.conf&#10;EXPOSE 80:8080&#10;```" />
+          </outline>
+        </outline>
+        <outline text="Managing of artifacts in Docker">
+          <outline text="How do we get our artifacts inside of the container?">
+            <outline text="Pre-built artifacts such as compiled binaries or shared libraries">
+              <outline text="COPY steps as part of docker build into a runtime destination">
+                <outline text="Example: Copy in a pre-compiled Go binary" _note="```dockerfile &#10;FROM go:1.7.2&#10;&#10;USER root&#10;COPY bin /usr/bin/&#10;&#10;EXPOSE 7000:7000&#10;ENTRYPOINT middleware&#10;```" />
+                <outline text="Benefits">
+                  <outline text="It's fast and easy" />
+                  <outline text="`docker build .` can easily be run through build tools, like grunt, rake, nant, etc, as part of a larger app build task" />
+                </outline>
+              </outline>
+            </outline>
+            <outline text="Build OS specific packages">
+              <outline text="rpm -i as part of the docker build .">
+                <outline text="Example: Generate an rpm as part of a build (Ruby rake) task, then copy the resulting rpm into container to install" _note="```dockerfile &#10;FROM centos:7.2&#10;&#10;COPY our-rails-app.rpm /tmp&#10;CD /tmp&#10;&#10;RUN rpm -i our-rails-app.rpm&#10;&#10;EXPOSE 8000:8000&#10;ENTRYPOINT start_our_rails_app&#10;```" />
+                <outline text="Benefits">
+                  <outline text="Can possibly leverage existing build pipelines that generate packages already" />
+                  <outline text="RPMs and DEBs are generated usually to include only runtime requirements" />
+                  <outline text="Any app dependencies can be specified in the package metadata, and can potentially be automatically installed">
+                    <outline text="Missing dependencies will break the build" />
+                  </outline>
+                </outline>
+              </outline>
+            </outline>
+            <outline text="Volume mounts">
+              <outline text="This is technique is often used in &lt;b&gt;development&lt;/b&gt; and &lt;b&gt;test&lt;/b&gt; environments" />
+              <outline text="The application source code exists on the host but is volume mounted at runtime" />
+              <outline text="`docker run node:latest -v ~/code/app/src:/usr/src/app`" />
+              <outline text="Benefits">
+                <outline text="Source code changes will be immediately reflected inside of the container without rebuilding the container***">
+                  <outline text="Particularly helpful for web development" />
+                </outline>
+                <outline text="You can use generic base images like ruby:latest, node:latest, go:latest, as a runtime environment to quickly get going" />
+              </outline>
+            </outline>
+            <outline text="OnBuild containers">
+              <outline text="Certain language runtime images offer an onbuild option" />
+              <outline text="These images contain logic to copy program source and build your application at the time of build of the container" />
+              <outline text="Example: hello-docker" />
+              <outline text="Benefits">
+                <outline text="These are exceptionally easy to use for developers" />
+                <outline text="They can be suitable for many simple production deploy" />
+              </outline>
+            </outline>
+            <outline text="Containerized app builds">
+              <outline text="The application is built inside the container environment during the docker build steps">
+                <outline text="Copy the source directory into a runtime destination then build the application in place">
+                  <outline text="Example: ">
+                    <outline text="A NodeJS application source is copied into the container, then a grunt task is run to build the app" _note="```dockerfile&#10;FROM node:latest&#10;&#10;COPY ./server/src /usr/src/app &#10;&#10;CD /usr/src/app&#10;&#10;RUN npm install -g grunt-cli&#10;RUN grunt build&#10;" />
+                    <outline text="stack-deploy" />
+                  </outline>
+                </outline>
+                <outline text="Checkout code inside the container and proceed as above" />
+                <outline text="This also allows you to use an in-house developed image as a pre-configured and versioned build and runtime environment">
+                  <outline text="Example:">
+                    <outline text="Your SRE team provides you with pre-configured Java image with supported Java, OS packages and logging utilities installed that you must use to deploy your app" _note="```dockerfile&#10;FROM our_company/production_java:stable&#10;&#10;COPY src /opt/server&#10;CD /opt/server&#10;&#10;RUN ant compile&#10;RUN ant jar&#10;RUN ant test&#10;&#10;ENTRYPOINT [&quot;java&quot;,&quot;/opt/server/app&quot;]&#10;```&#10;" />
+                  </outline>
+                  <outline text="Benefits">
+                    <outline text="Less variation in build and delivery environments" />
+                    <outline text="The base image can be updated and continuously iterated on">
+                      <outline text="A simple `docker build` will rebuild your app on top of the new environment ">
+                        <outline text="Try doing that with a VM." />
+                      </outline>
+                      <outline text="Security patches and version updates, new utilities, etc" />
+                    </outline>
+                  </outline>
+                </outline>
+              </outline>
+            </outline>
+            <outline text="Multi-stage Builds">
+              <outline text="TBD" />
+            </outline>
+          </outline>
+        </outline>
+      </outline>
+    </outline>
+  </body>
+</opml>

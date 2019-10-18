@@ -18,6 +18,9 @@ Some presentations live on Google Slides. I've included a link to them in the .t
 - Containers
   - First Look: Container Security (2017 - Docker Meetup STL)
     - How containers can improve our security postures
+  - Docker In Practice (2017 - Docker Meetup STL)
+    - Tips and guidance on using Docker containers in our projects
 - SPIFFE
   - Securing Application Metrics & Tracing (2018 - KubeCon)
     - How to use SPIFFE and Envoy to protect telemetry APIs
+

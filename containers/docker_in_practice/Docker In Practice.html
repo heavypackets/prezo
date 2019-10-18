@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      body {font-family:'Helvetica Neue', Arial, sans-serif; color:#333; font-size:13px; line-height:17px;}
+      body .name,body .note {white-space:pre-wrap;}
+      body ul {list-style:disc; margin:0; padding:0;}
+      body li {margin:4px 0 4px 20px; padding:0;}
+      body>.name {font-size:16px; line-height:21px;}
+      body>.note {font-size:13px; line-height:17px;}
+      body>ul {margin-top:15px;}
+      body .name.done {text-decoration:line-through; color:#999;}
+      body .note {font-size:12px; color:#666;}
+    </style>
+  </head>
+  <body>
+    <span class="name">Docker In Practice</span><ul><li><span class="name">Talk 1: Binaries and Code</span><ul><li><span class="name">Introduction</span><ul><li><span class="name">YMMV</span><ul><li><span class="name">Lots of caveats; pragmatism is key</span></li><li><span class="name">Best-practices are always negotiable ("best" is constantly changing")</span></li><li><span class="name">No one really knows what they are doing, yet</span></li><li><span class="name">Everyone has an opinion, but Docker is rather loosely-opinionated and on purpose</span></li></ul></li><li><span class="name">What are application artifacts?</span><ul><li><span class="name">"An&nbsp;artifact&nbsp;is one of many kinds of tangible by-products produced during the development of&nbsp;software" -- Wikipedia</span></li><li><span class="name">Binaries</span><ul><li><span class="name">Some applications are entire comprised of compiled binaries</span></li><li><span class="name">Examples</span><ul><li><span class="name">Application executables and dynamically linked libraries</span><ul><li><span class="name">C/C++</span></li><li><span class="name">Go</span></li><li><span class="name">.NET* </span></li></ul></li><li><span class="name">Bytecode from JIT languages</span><ul><li><span class="name">Python .pyc</span></li></ul></li></ul></li><li><span class="name">Some binaries and libraries are run-time dependencies but are provided by the OS or other 3rd party packages</span><ul><li><span class="name">These are not artifacts themselves, as they are not produced by your development pipeline</span></li><li><span class="name">However, specific dependency versions <b>can </b>be an important part of your overall runtime configuration and must be account for</span><ul><li><span class="name">Example, requiring a specific version of Java, .NET, or libstdc++ to be present</span></li></ul></li></ul></li></ul></li><li><span class="name">Code</span><ul><li><span class="name">Shell scripts</span></li><li><span class="name">Dynamic/Interpreted apps</span><ul><li><span class="name">Some applications are made entirely using dynamic languages</span></li><li><span class="name">Examples</span><ul><li><span class="name">Ruby Rails</span></li><li><span class="name">Python Django</span></li><li><span class="name">Elixir</span></li></ul></li><li><span class="name">Unlike binary only apps, source code <i>generally </i>must be included in the resulting containers in order for the app to run (see bytecode)</span></li></ul></li><li><span class="name">Test code</span><ul><li><span class="name">Unit tests</span></li><li><span class="name">Acceptance Tests</span><ul><li><span class="name">RSpec</span></li><li><span class="name">Cucumber</span></li></ul></li></ul></li></ul></li><li><span class="name">Static files</span><ul><li><span class="name">These files aren't code per se*, but rather files that:</span><ul><li><span class="name">The application itself requires to be present in order to run correctly</span></li><li><span class="name">Direct an applications behavior by changing its configuration</span></li><li><span class="name">Can help users understand how the application behaves</span></li></ul></li><li><span class="name">Examples</span><ul><li><span class="name">Images</span></li><li><span class="name">Text files</span></li><li><span class="name">Configuration files</span><ul><li><span class="name">JSON</span></li><li><span class="name">XML</span></li><li><span class="name">YAML</span></li></ul></li><li><span class="name">Embedded DB</span><ul><li><span class="name">SQLite</span></li></ul></li><li><span class="name">Documentation</span><ul><li><span class="name">Doxygen</span></li><li><span class="name">Man pages</span></li><li><span class="name">Swagger</span></li></ul></li></ul></li></ul></li><li><span class="name">Hybrids/Monoliths</span><ul><li><span class="name">Can contain code, binaries, and static files in one container</span></li><li><span class="name">JARs/WARs/EARs</span></li><li><span class="name">Linux packages</span><ul><li><span class="name">RPM</span></li><li><span class="name">DEB</span></li></ul></li><li><span class="name">Windows packages</span><ul><li><span class="name">Nullsoft</span></li><li><span class="name">Intellishield</span></li></ul></li></ul></li></ul></li><li><span class="name">Why is this relevant to Docker?</span><ul><li><span class="name">Containers <i>generally </i>must contain all runtime requirements within a single container</span><ul><li><span class="name">It is a <i>good</i> goal to be able to simply `docker run my-container` and its have its default state without external files or configuration be sane and functional</span></li><li><span class="name">This a tenant of <b>12-factor </b><a class="contentLink" target="_blank" rel="noreferrer" href="https://12factor.net/d">https://12factor.net/d</a></span><ul><li><span class="name"><i>A twelve-factor app never relies on implicit existence of system-wide packages.&nbsp;</i></span></li></ul></li></ul></li><li><span class="name">External mounting of runtime dependencies (files) is often seen as a bad practice</span><ul><li><span class="name">That requires a specific runtime environment configuration to exist before you can run the container</span></li><li><span class="name">Unless your runtime environment is also versioned or under configuration management, behavior of your application is less guaranteed to be consistent across hosts</span><ul><li><span class="name">Not a big deal with single host Docker deployments, but maturation to the use of multi-host orchestration quickly becomes a nightmare</span></li></ul></li></ul></li><li><span class="name">However, it is a common practice to <i>override </i>default configuration within a containerized apps by mounting external files over existing ones in <b>test environments</b></span><ul><li><span class="name">Example: An NGINX container has a default nginx.conf but you can mount a custom one to override the default, rather than derive an entirely new container</span><ul><li><span class="name">docker run nginx/nginx -v ./nginx.conf:/etc/nginx/nginx.conf:ro</span></li></ul></li></ul></li><li><span class="name">In production environments, it's a good idea to derive new containers with all required file artifacts compiled in as to avoid a <b>hard</b> <b>dependency</b> with your runtime environment</span><br /><span class="note">```dockerfile
+FROM nginx:latest
+
+COPY ./nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80:8080
+```
+</span></li></ul></li></ul></li><li><span class="name">Managing of artifacts in Docker</span><ul><li><span class="name">How do we get our artifacts inside of the container?</span><ul><li><span class="name">Pre-built artifacts such as compiled binaries or shared libraries</span><ul><li><span class="name">COPY steps as part of docker build into a runtime destination</span><ul><li><span class="name">Example: Copy in a pre-compiled Go binary</span><br /><span class="note">```dockerfile 
+FROM go:1.7.2
+
+USER root
+COPY bin /usr/bin/
+
+EXPOSE 7000:7000
+ENTRYPOINT middleware
+```
+</span></li><li><span class="name">Benefits</span><ul><li><span class="name">It's fast and easy</span></li><li><span class="name">`docker build .` can easily be run through build tools, like grunt, rake, nant, etc, as part of a larger app build task</span></li></ul></li></ul></li></ul></li><li><span class="name">Build OS specific packages</span><ul><li><span class="name">rpm -i as part of the docker build .</span><ul><li><span class="name">Example: Generate an rpm as part of a build (Ruby rake) task, then copy the resulting rpm into container to install</span><br /><span class="note">```dockerfile 
+FROM centos:7.2
+
+COPY our-rails-app.rpm /tmp
+CD /tmp
+
+RUN rpm -i our-rails-app.rpm
+
+EXPOSE 8000:8000
+ENTRYPOINT start_our_rails_app
+```
+</span></li><li><span class="name">Benefits</span><ul><li><span class="name">Can possibly leverage existing build pipelines that generate packages already</span></li><li><span class="name">RPMs and DEBs are generated usually to include only runtime requirements</span></li><li><span class="name">Any app dependencies can be specified in the package metadata, and can potentially be automatically installed</span><ul><li><span class="name">Missing dependencies will break the build</span></li></ul></li></ul></li></ul></li></ul></li><li><span class="name">Volume mounts</span><ul><li><span class="name">This is technique is often used in <b>development</b> and <b>test</b> environments</span></li><li><span class="name">The application source code exists on the host but is volume mounted at runtime</span></li><li><span class="name">`docker run node:latest -v ~/code/app/src:/usr/src/app`</span></li><li><span class="name">Benefits</span><ul><li><span class="name">Source code changes will be immediately reflected inside of the container without rebuilding the container***</span><ul><li><span class="name">Particularly helpful for web development</span></li></ul></li><li><span class="name">You can use generic base images like ruby:latest, node:latest, go:latest, as a runtime environment to quickly get going</span></li></ul></li></ul></li><li><span class="name">OnBuild containers</span><ul><li><span class="name">Certain language runtime images offer an onbuild option</span></li><li><span class="name">These images contain logic to copy program source and build your application at the time of build of the container</span></li><li><span class="name">Example: hello-docker</span></li><li><span class="name">Benefits</span><ul><li><span class="name">These are exceptionally easy to use for developers</span></li><li><span class="name">They can be suitable for many simple production deploy</span></li></ul></li></ul></li><li><span class="name">Containerized app builds</span><ul><li><span class="name">The application is built inside the container environment during the docker build steps</span><ul><li><span class="name">Copy the source directory into a runtime destination then build the application in place</span><ul><li><span class="name">Example: </span><ul><li><span class="name">A NodeJS application source is copied into the container, then a grunt task is run to build the app</span><br /><span class="note">```dockerfile
+FROM node:latest
+
+COPY ./server/src /usr/src/app 
+
+CD /usr/src/app
+
+RUN npm install -g grunt-cli
+RUN grunt build
+
+</span></li><li><span class="name">stack-deploy</span></li></ul></li></ul></li><li><span class="name">Checkout code inside the container and proceed as above</span></li><li><span class="name">This also allows you to use an in-house developed image as a pre-configured and versioned build and runtime environment</span><ul><li><span class="name">Example:</span><ul><li><span class="name">Your SRE team provides you with pre-configured Java image with supported Java, OS packages and logging utilities installed that you must use to deploy your app</span><br /><span class="note">```dockerfile
+FROM our_company/production_java:stable
+
+COPY src /opt/server
+CD /opt/server
+
+RUN ant compile
+RUN ant jar
+RUN ant test
+
+ENTRYPOINT ["java","/opt/server/app"]
+```
+
+</span></li></ul></li><li><span class="name">Benefits</span><ul><li><span class="name">Less variation in build and delivery environments</span></li><li><span class="name">The base image can be updated and continuously iterated on</span><ul><li><span class="name">A simple `docker build` will rebuild your app on top of the new environment </span><ul><li><span class="name">Try doing that with a VM.</span></li></ul></li><li><span class="name">Security patches and version updates, new utilities, etc</span></li></ul></li></ul></li></ul></li></ul></li></ul></li><li><span class="name">Multi-stage Builds</span><ul><li><span class="name">TBD</span></li></ul></li></ul></li></ul></li></ul></li></ul>
+  </body>
+</html>
