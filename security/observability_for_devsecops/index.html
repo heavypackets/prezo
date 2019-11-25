@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Application Observability for DevSecOps</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+        @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+        @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+        @import url(https://cdn.jsdelivr.net/gh/tonsky/FiraCode@1.207/distr/fira_code.css);
+
+        body {
+            font-family: 'Droid Serif';
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Yanone Kaffeesatz';
+            font-weight: normal;
+        }
+
+        .remark-code,
+        .remark-inline-code {
+            font-family: 'Fira Code', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <textarea id="source">
+
+layout: true
+
+class: center, middle
+
+---
+
+# Application Observability for DevSecOps
+## Metrics and distributed tracing for context-aware AppSec
+
+### Sabree Blackmon
+Security Dork At Large
+
+@HeavyPackets
+
+---
+
+# What is this talk?
+
+--
+
+##
+
+---
+
+# What this talk isn't?
+
+--
+
+##
+
+---
+
+# Status Quo
+## Security tooling oftens begins at the infrastructure in.
+
+--
+
+## But, how far "in" these tools go is typically low
+### Blackbox
+
+---
+
+# Alternative Approaches
+
+---
+
+# Artifical Intelligence
+## Problem: Blackbox
+## Problem: 99.99% of it is terrible
+---
+# Machine Learning
+---
+## Problem: DNN are only as good as our training data.
+### This means....
+
+---
+
+## Problem: DNN are approximations of functions that take in multiple inputs
+### How these inputs relate (or don't relate) to each other cannot be easily learned
+#### Normal statistical methods can be much better at discovering relationships in data
+
+---
+
+## What if we tool our applications to report hueristics that are acually meaningful
+
+---
+
+## Let's create formally specified systems, utilizing sampled application telemetry, that are well understood by both the Devs and SecOps
+
+--- 
+
+## We can describe and understand our security outlook using the semantics and context of our applications
+
+---
+
+# So, what is OpenTelemetry?
+
+---
+
+Brand new CNCF sanbox project that is a combination of OpenCensus and OpenTracing
+
+---
+
+## GRPC and Protobuf spec for time-series metrics and tracing
+
+---
+
+## Side-car vs Centralized Deployments
+
+---
+
+## Mutliple (extendable) output engines
+### Standard interfaces allow us to write our own analysis and alerting tools
+
+---
+
+# Let's look at time-series
+
+???
+
+For the next slides, I'll assume you are using OpenTelemetry with Prometheus
+
+---
+
+# Examples:
+
+???
+
+Let's dive right into some Examples
+
+---
+
+# Specifying Heuristics
+
+???
+
+We specify heurisitics in terms of samples
+
+---
+
+## Absolute Range (Min/Max)
+
+### 
+
+---
+
+## Rate of Change 
+
+### `\(H={dx \over dt}\)`
+
+---
+
+## Heuristics in terms of sample statistics
+
+## Standard Deviation `\(\sigma\)`
+
+
+### Derived Probability
+
+---
+
+
+
+# Display and Inline
+ 
+1. This is an inline integral: `\(\int_a^bf(x)dx\)`
+2. More  formulae.
+ 
+Display formula:
+
+$$e^{i\pi} + 1 = 0$$
+
+
+
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js" type="text/javascript">
+    </script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured"
+        type="text/javascript"></script>
+    <script type="text/javascript">
+        var slideshow = remark.create({
+            countIncrementalSlides: false,
+        });
+
+        MathJax.Hub.Config({
+            tex2jax: {
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        });
+
+        MathJax.Hub.Configured();
+    </script>
+</body>
+
+</html>
