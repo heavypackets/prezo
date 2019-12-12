@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Cloud Native: Start Here</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+        @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+        @import url(https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+        @import url(https://cdn.jsdelivr.net/gh/tonsky/FiraCode@*207/distr/fira_code.css);
+
+        body {
+            font-family: 'Droid Serif';
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Yanone Kaffeesatz';
+            font-weight: normal;
+        }
+
+        .remark-code,
+        .remark-inline-code {
+            font-family: 'Fira Code', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <textarea id="source">
+
+class: center, middle
+
+# Cloud Native: Start Here
+## An exploration into the cloud-native ecosystem
+
+### Sabree Blackmon
+Security Dork At Large
+
+CNCF Ambassador // Speakers Bureau
+
+@HeavyPackets // sabree@heavypackets.sh
+
+---
+
+# Agenda
+* What is Cloud Native?
+* What is the CNCF?
+* Landscape Overview
+* What about Kubernetes?
+* KubeCon 19: What happened?
+* Get Involved
+* Let's Hangout
+
+???
+
+This is a loose agenda. Please comment if you have any questions during the talk, I'll address them
+
+---
+
+layout: true
+
+class: center, middle
+
+---
+
+# What is cloud native?
+[CNCF Cloud Native Definition v1.0 ](https://github.com/cncf/toc/blob/master/DEFINITION.md)
+
+???
+
+Turns out, there is a formal definition on GitHub
+
+---
+
+# The Goal
+“Cloud native technologies
+empower organizations to build
+and run scalable applications in
+modern, dynamic environments
+such as public, private, and hybrid clouds.” - CNCF
+
+---
+
+# The Method
+"Techniques that enable loosely
+coupled systems that are
+resilient, manageable, and
+observable. Combined with
+robust automation, they allow
+teams to make high-impact
+changes frequently and
+predictably without pain" - CNCF
+
+---
+
+# In practice, this means...
+
+---
+
+# DevOps
+--
+
+_It's mostly that simple_
+
+---
+
+# But, more specifically...
+
+---
+
+### Containers & Microservices
+### Service Mesh
+### CI/CD
+### Infrastructure as Code
+### Zero-Trust
+### Distributed Observability
+
+---
+
+# Why is this stuff important?
+
+--
+
+Deploying applications _effectively and efficiently_ to the cloud requires fundamental changes to how we write applications and think about operations
+
+---
+
+# Why is this stuff important?
+
+While you can "lift and shift" your monoliths to a VPC, it will waste a lot of money and prevent the operational agility demanded by businesses today
+
+???
+
+The compute density of most data centers is extremely low. The app on a VM paradigm works, but 
+
+---
+
+# Questions? 
+
+???
+
+3 mins
+
+---
+
+# What is the CNCF?
+## Cloud Native Computing Foundation
+
+---
+
+# Cloud Native Computing Foundation
+The CNCF is a sub-org of the not-for-profit [Linux Foundation](https://www.linuxfoundation.org). It exists to foster the cloud native technology ecosystem,
+providing guidelines for project maturity & community, as well as financial & legal support.
+
+[Charter](https://github.com/cncf/foundation/blob/master/charter.md)
+
+---
+
+# Important Points
+
+---
+
+## Membership
+
+The CNCF is comprised of [members](https://www.cncf.io/about/members/), like the Linux Foundation.
+
+--
+
+Many of these organizations are technology contributors, but most are end-user organizations that use cloud native technologies and want to get involved in the community.
+
+---
+
+## Projects
+
+Many projects are _donated_ to the CNCF by members and are voted in by commitee.
+
+--
+
+This includes a vetting process, to insure that the project is indeed OSS, has a diverse set of contributors, and is governed in a truly pragmatic way.
+
+---
+
+# Project Graduation
+
+---
+
+## Sandbox to Graduation
+
+New CNCF projects are expected to go through 3 phases: Sandbox, Incubating and Graduated
+
+---
+
+# Sandbox to Graduation
+This maturity model is detailed in the book: Crossing the Chasm.
+
+It gives enterprise and end-users a key metric in determining when a project is ready for adoption at scale.
+
+???
+
+This doesn't mean you can't use projects that aren't yet graducated, but you may experient some rough edges
+
+---
+
+
+
+
+
+
+
+    </textarea>
+    <script src="https://remarkjs.com/downloads/remark-latest.min.js" type="text/javascript">
+    </script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured"
+        type="text/javascript"></script>
+    <script type="text/javascript">
+        var slideshow = remark.create({
+            countIncrementalSlides: false,
+        });
+
+        MathJax.Hub.Config({
+            tex2jax: {
+                skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        });
+
+        MathJax.Hub.Configured();
+    </script>
+</body>
+
+</html>
